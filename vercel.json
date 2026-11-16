@@ -19,11 +19,6 @@
       "path": "/api/cron/tasas",
       "schedule": "0 0 * * *",
       "timezone": "America/Chicago"
-    },
-    {
-      "path": "/api/cron/alertas",
-      "schedule": "0 * * * *",
-      "timezone": "America/Chicago"
     }
   ]
 }

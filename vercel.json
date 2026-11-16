@@ -17,8 +17,7 @@
   "crons": [
     {
       "path": "/api/cron/tasas",
-      "schedule": "0 0 * * *",
-      "timezone": "America/Chicago"
+      "schedule": "0 0 * * *"
     }
   ]
 }

@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: API Conversor de Monedas con Histórico (MonedaExpress)
+  description: |
+    API REST para conversión de divisas, consulta de series históricas del Banco Central Europeo,
+    administración de pares favoritos y monitoreo de alertas de cambio.
+    Desarrollado con Next.js App Router, Firebase Admin SDK y Frankfurter.
+  version: 1.0.0
+servers:
+  - url: http://localhost:3000
+    description: Servidor de desarrollo local
+  - url: https://conversor-de-monedas.vercel.app
+    description: Despliegue en producción (Vercel)
+
+paths:
+  /api/auth/sesion:
+    post:
+      summary: Crear sesión HttpOnly a partir de Firebase ID Token
+      operationId: crearSesion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [idToken]
+              properties:
+                idToken:
+                  type: string
+                  description: Token JWT emitido por Firebase Auth en el cliente
+      responses:
+        '204':
+          description: Sesión iniciada con éxito. Establece la cookie HttpOnly 'sesion'.
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: sesion=...; Path=/; HttpOnly; SameSite=Lax; Max-Age=432000
+        '400':
+          $ref: '#/components/responses/Error400'
+        '403':
+          $ref: '#/components/responses/Error403'
+
+    delete:
+      summary: Cerrar sesión activa y destruir cookie
+      operationId: cerrarSesion
+      responses:
+        '204':
+          description: Sesión destruida con éxito.
+        '403':
+          $ref: '#/components/responses/Error403'
+
+  /api/auth/yo:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      operationId: obtenerUsuarioActual
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Datos del usuario autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  usuario:
+                    type: object
+                    properties:
+                      uid:
+                        type: string
+                      correo:
+                        type: string
+                        nullable: true
+                      rol:
+                        type: string
+                        enum: [usuario, admin]
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /api/tasas:
+    get:
+      summary: Obtener tasas de cambio actuales para una moneda base
+      operationId: obtenerTasas
+      parameters:
+        - name: base
+          in: query
+          required: false
+          schema:
+            type: string
+            default: USD
+            example: USD
+          description: Código ISO de 3 letras de la moneda base
+      responses:
+        '200':
+          description: Tasas actuales y fecha de referencia
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  base:
+                    type: string
+                  fecha:
+                    type: string
+                    format: date
+                  valores:
+                    type: object
+                    additionalProperties:
+                      type: number
+                  origen:
+                    type: string
+                    enum: [frankfurter, firestore_cache, fallback]
+        '400':
+          $ref: '#/components/responses/Error400'
+
+  /api/tasas/historico:
+    get:
+      summary: Obtener serie histórica ordenada entre dos divisas
+      operationId: obtenerHistorico
+      parameters:
+        - name: base
+          in: query
+          required: true
+          schema:
+            type: string
+            example: USD
+        - name: destino
+          in: query
+          required: true
+          schema:
+            type: string
+            example: EUR
+        - name: dias
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 365
+            example: 30
+      responses:
+        '200':
+          description: Serie histórica y métricas del periodo
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  base: { type: string }
+                  destino: { type: string }
+                  dias: { type: integer }
+                  tasaMinima: { type: number }
+                  tasaMaxima: { type: number }
+                  tasaPromedio: { type: number }
+                  tasaActual: { type: number }
+                  puntos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        fecha: { type: string, format: date }
+                        tasa: { type: number }
+        '400':
+          $ref: '#/components/responses/Error400'
+
+  /api/favoritos:
+    get:
+      summary: Listar pares favoritos del usuario autenticado
+      operationId: listarFavoritos
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Lista de pares favoritos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ParFavorito'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+    post:
+      summary: Guardar un nuevo par favorito
+      operationId: crearFavorito
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [base, destino]
+              properties:
+                base: { type: string, example: USD }
+                destino: { type: string, example: EUR }
+      responses:
+        '201':
+          description: Par favorito guardado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  favorito:
+                    $ref: '#/components/schemas/ParFavorito'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '409':
+          $ref: '#/components/responses/Error409'
+
+  /api/favoritos/{id}:
+    delete:
+      summary: Eliminar un par favorito
+      operationId: eliminarFavorito
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          example: USD_EUR
+      responses:
+        '204':
+          description: Eliminado exitosamente
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /api/alertas:
+    get:
+      summary: Listar y evaluar alertas de tasa del usuario
+      operationId: listarAlertas
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Alertas del usuario evaluadas contra la tasa actual
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alerta'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+    post:
+      summary: Crear una nueva alerta de tasa
+      operationId: crearAlerta
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [base, destino, condicion, valor]
+              properties:
+                base: { type: string, example: USD }
+                destino: { type: string, example: EUR }
+                condicion: { type: string, enum: [mayor, menor] }
+                valor: { type: number, example: 0.95 }
+                activa: { type: boolean, default: true }
+      responses:
+        '201':
+          description: Alerta registrada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  alerta:
+                    $ref: '#/components/schemas/Alerta'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+
+  /api/alertas/{id}:
+    patch:
+      summary: Actualizar estado o umbral de una alerta
+      operationId: actualizarAlerta
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condicion: { type: string, enum: [mayor, menor] }
+                valor: { type: number }
+                activa: { type: boolean }
+      responses:
+        '200':
+          description: Alerta actualizada
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+    delete:
+      summary: Eliminar una alerta
+      operationId: eliminarAlerta
+      security:
+        - CookieAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Eliminada exitosamente
+        '401':
+          $ref: '#/components/responses/Error401'
+        '404':
+          $ref: '#/components/responses/Error404'
+
+  /api/cron/tasas:
+    get:
+      summary: Tarea programada (Vercel Cron) para precargar tasas diarias
+      operationId: ejecutarCronTasas
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+          description: Token Bearer con el valor de CRON_SECRET
+      responses:
+        '200':
+          description: Tarea completada exitosamente
+        '401':
+          $ref: '#/components/responses/Error401'
+
+components:
+  securitySchemes:
+    CookieAuth:
+      type: apiKey
+      in: cookie
+      name: sesion
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ParFavorito:
+      type: object
+      properties:
+        id: { type: string }
+        base: { type: string }
+        destino: { type: string }
+        creadoEn: { type: string, format: date-time }
+
+    Alerta:
+      type: object
+      properties:
+        id: { type: string }
+        base: { type: string }
+        destino: { type: string }
+        condicion: { type: string, enum: [mayor, menor] }
+        valor: { type: number }
+        activa: { type: boolean }
+        creadaEn: { type: string, format: date-time }
+        tasaActual: { type: number }
+        cumpleCondicion: { type: boolean }
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+        detalles:
+          type: array
+          items:
+            type: object
+            properties:
+              campo: { type: string }
+              mensaje: { type: string }
+
+  responses:
+    Error400:
+      description: Solicitud inválida o error de validación en parámetros
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Error401:
+      description: No autenticado o credenciales inválidas
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Error403:
+      description: No autorizado o violación de CSRF
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Error404:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Error409:
+      description: Conflicto o recurso ya existente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

@@ -1,0 +1,11 @@
+meta {
+  name: 7. Obtener Historico 400 (Rango > 365 dias)
+  type: http
+  seq: 7
+}
+
+get {
+  url: http://localhost:3000/api/tasas/historico?base=USD&destino=EUR&dias=500
+  body: none
+  auth: none
+}

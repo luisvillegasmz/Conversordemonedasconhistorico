@@ -1,0 +1,15 @@
+meta {
+  name: 10. Eliminar Favorito 404 (No Existe)
+  type: http
+  seq: 10
+}
+
+delete {
+  url: http://localhost:3000/api/favoritos/PAR_INEXISTENTE
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: token-valido-simulado
+}

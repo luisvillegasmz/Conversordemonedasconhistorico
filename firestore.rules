@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Por diseño de seguridad, el navegador nunca accede directamente a Firestore.
+    // Todas las operaciones de lectura y escritura se realizan exclusivamente
+    // a través del Admin SDK desde la API de Next.js en el servidor.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

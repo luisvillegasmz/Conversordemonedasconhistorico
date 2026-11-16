@@ -9,7 +9,7 @@ Columnas: **Propósito** (qué se le pidió), **Evidencia** (qué produjo),
 ## Formato de entrada
 
 ```
-### AAAA-MM-DD — <título corto de la sesión>
+### 2026-11-16 — <título corto de la sesión>
 
 **Propósito:** …
 **Herramienta:** Claude Code / Claude.ai / otra
@@ -23,15 +23,16 @@ Columnas: **Propósito** (qué se le pidió), **Evidencia** (qué produjo),
 
 ## Sesiones
 
-### 2025-XX-XX — Configuración inicial de IA (primer commit)
+### 2026-11-16 — Configuración inicial de IA (primer commit)
 
 **Propósito:** Diseñar y versionar la configuración de IA del proyecto antes
 de escribir código (requisito sección 15 del enunciado).
 **Herramienta:** Claude.ai
 **Generó / modificó:**
+
 - `CLAUDE.md` — reglas del proyecto, restricciones de seguridad, calidad del código
 - `ia/bitacora.md` — este archivo
 - `ia/pruebas-restricciones.md` — plan de evidencias de las restricciones
-**Validación:** revisión manual del contenido contra la sección 15 del enunciado.
-**Decisión:** aceptado con ajustes menores (actualizar fecha, nombre del repositorio).
-**Notas:** primera entrada; no se generó código fuente todavía.
+  **Validación:** revisión manual del contenido contra la sección 15 del enunciado.
+  **Decisión:** aceptado con ajustes menores (actualizar fecha, nombre del repositorio).
+  **Notas:** primera entrada; no se generó código fuente todavía.

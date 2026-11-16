@@ -1,0 +1,22 @@
+meta {
+  name: 9. Crear Favorito 400 (Monedas Iguales)
+  type: http
+  seq: 9
+}
+
+post {
+  url: http://localhost:3000/api/favoritos
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: token-valido-simulado
+}
+
+body:json {
+  {
+    "base": "USD",
+    "destino": "USD"
+  }
+}

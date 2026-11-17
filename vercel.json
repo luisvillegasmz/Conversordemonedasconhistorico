@@ -5,6 +5,10 @@
       "runtime": "nodejs22.x"
     }
   },
+  "builds": [{
+    "src": "next.config.js",
+    "use": "@vercel/next"
+  }],
   "crons": [{
     "path": "/api/cron/tasas",
     "schedule": "0 0 * * *"

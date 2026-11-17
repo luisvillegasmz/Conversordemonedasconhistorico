@@ -1,6 +1,10 @@
 {
   "version": 2,
-  "nodejs": "22.x",
+  "functions": {
+    "app/**": {
+      "runtime": "nodejs22.x"
+    }
+  },
   "crons": [{
     "path": "/api/cron/tasas",
     "schedule": "0 0 * * *"

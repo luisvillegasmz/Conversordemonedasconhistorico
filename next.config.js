@@ -1,8 +1,4 @@
-// next.config.js
-/**
- * Next.js configuration with security headers.
- * Adjust the CSP policy as needed for your application.
- */
+/** @type {import('next').NextConfig} */
 const securityHeaders = [
   {
     key: "Content-Security-Policy",
@@ -14,29 +10,11 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "geolocation=(), microphone=()" },
 ];
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  serverExternalPackages: ['firebase-admin'],
+  serverExternalPackages: ['firebase-admin', 'jwks-rsa', 'jose'],
   async headers() {
-    return [
-      {
-        // Apply these headers to all routes in the application.
-        source: '/(.*)',
-        headers: securityHeaders,
-      },
-    ];
-  },
-  // Enable environment variables from .env files.
-  env: {
-    NEXT_PUBLIC_FIREBASE_API_KEY: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    NEXT_PUBLIC_FIREBASE_APP_ID: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
-    FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID,
-    FIREBASE_CLIENT_EMAIL: process.env.FIREBASE_CLIENT_EMAIL,
-    FIREBASE_PRIVATE_KEY: process.env.FIREBASE_PRIVATE_KEY,
-    CRON_SECRET: process.env.CRON_SECRET,
+    return [{ source: '/(.*)', headers: securityHeaders }];
   },
 };
 
